@@ -1,6 +1,7 @@
 import sqlite3
 import time
 import os
+import sys
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes, ConversationHandler, CallbackQueryHandler
 
@@ -73,7 +74,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def get_nickname(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         context.user_data['nickname'] = update.message.text
-        await update.message.reply_text("🔹 Теперь введите ваш пароль для верификации:")
+        await update.message.reply_text("🔹 Теперь введите ваш пароль:")
         return PASSWORD
     except Exception as e:
         print(f"Error in get_nickname: {e}")
@@ -161,6 +162,7 @@ async def unban_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 def main():
     try:
+        # Создаем application с указанием одного бота
         application = Application.builder().token(BOT_TOKEN).build()
         
         conv_handler = ConversationHandler(
@@ -179,10 +181,16 @@ def main():
         application.add_handler(conv_handler)
         application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
         
-        print("Бот запущен!")
-        application.run_polling()
+        print("🔄 Запуск бота...")
+        print("✅ Бот запущен! Остановите все другие экземпляры бота.")
+        application.run_polling(drop_pending_updates=True)
+        
     except Exception as e:
-        print(f"Ошибка запуска бота: {e}")
+        print(f"❌ Ошибка запуска бота: {e}")
+        print("⚠️  Убедитесь, что другие экземпляры бота остановлены!")
+        sys.exit(1)
 
 if __name__ == '__main__':
+    # Проверяем, не запущен ли уже бот
+    print("🔍 Проверка запущенных процессов...")
     main()
