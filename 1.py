@@ -6,7 +6,7 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes, ConversationHandler, CallbackQueryHandler
 
 # Конфигурация
-BOT_TOKEN = "8300222284:AAHt3oT-fxyls9-xv0CNjG4ucFp4Y3vLFmU"
+BOT_TOKEN = "8300222284:AAFXe3RcH2pHwvifhcbyPWJD5PRwB-8eOpw"
 ADMIN_ID = 8000395560  # Ваш ID
 CHANNEL_LINK = "https://t.me/pnixmcbe"
 CREATOR_USERNAME = "@isnikson"
@@ -194,3 +194,4 @@ if __name__ == '__main__':
     # Проверяем, не запущен ли уже бот
     print("🔍 Проверка запущенных процессов...")
     main()
+
