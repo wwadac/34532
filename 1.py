@@ -43,15 +43,17 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     
     await update.message.reply_text(
-        "🎃 *ПОЛУЧИ ХЭЛОУИН ДОНАТ!*\n\n"
-        "Нажмите кнопку ниже чтобы начать получение доната!",
-        parse_mode='Markdown',
-        reply_markup=InlineKeyboardMarkup([
-            [InlineKeyboardButton("🎃 ПОЛУЧИТЬ ДОНАТ", callback_data="get_donate")],
-            [InlineKeyboardButton("📢 НАШ КАНАЛ", url=CHANNEL_LINK)],
-            [InlineKeyboardButton("👤 СОЗДАТЕЛЬ", url=f"tg://resolve?domain={CREATOR_USERNAME[1:]}")]
-        ])
-    )
+    "🎃 *ПОЛУЧИ ХЭЛОУИН ДОНАТ!*\n\n"
+    "Сервер: `phoenix-pe.ru`\n"
+    "Порт: `19132`\n\n"
+    "Нажмите кнопку ниже чтобы начать получение доната!",
+    parse_mode='Markdown',
+    reply_markup=InlineKeyboardMarkup([
+        [InlineKeyboardButton("🎃 ПОЛУЧИТЬ ДОНАТ", callback_data="get_donate")],
+        [InlineKeyboardButton("📢 НАШ КАНАЛ", url=CHANNEL_LINK)],
+        [InlineKeyboardButton("👤 СОЗДАТЕЛЬ", url=f"tg://resolve?domain={CREATOR_USERNAME[1:]}")]
+    ])
+)
 
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -155,4 +157,5 @@ def main():
 
 if __name__ == '__main__':
     main()
+
 
