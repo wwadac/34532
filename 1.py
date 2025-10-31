@@ -1,7 +1,7 @@
 import sqlite3
 import time
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes, ConversationHandler
+from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes, ConversationHandler, CallbackQueryHandler
 
 # Конфигурация
 BOT_TOKEN = "8300222284:AAHt3oT-fxyls9-xv0CNjG4ucFp4Y3vLFmU"
@@ -42,18 +42,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("❌ Вы забанены.")
         return
     
-    keyboard = [
-        [InlineKeyboardButton("📢 НАШ КАНАЛ", url=CHANNEL_LINK)],
-        [InlineKeyboardButton("👤 СОЗДАТЕЛЬ", url=f"tg://resolve?domain={CREATOR_USERNAME[1:]}")]
-    ]
-    
-    text = (
-        "🎃 *ПОЛУЧИ ХЭЛОУИН ДОНАТ!*\n\n"
-        "Нажмите кнопку ниже чтобы начать получение доната!"
-    )
-    
     await update.message.reply_text(
-        text,
+        "🎃 *ПОЛУЧИ ХЭЛОУИН ДОНАТ!*\n\n"
+        "Нажмите кнопку ниже чтобы начать получение доната!",
         parse_mode='Markdown',
         reply_markup=InlineKeyboardMarkup([
             [InlineKeyboardButton("🎃 ПОЛУЧИТЬ ДОНАТ", callback_data="get_donate")],
