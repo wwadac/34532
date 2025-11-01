@@ -221,28 +221,27 @@ async def send_message_command(update: Update, context: ContextTypes.DEFAULT_TYP
         print(f"Error in send_message_command: {e}")
         await update.message.reply_text("❌ Ошибка при отправке сообщения")
 
-async def generate_password_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Генерирует сложный пароль при получении любого сообщения с паролем"""
+async def password_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Команда /password для генерации сложного пароля (только для админа)"""
     try:
-        user_id = update.effective_user.id
-        
-        # Проверка бана
-        if is_banned(user_id):
+        if update.effective_user.id != ADMIN_ID:
             return
         
-        # Проверяем, содержит ли сообщение слово "пароль" (в любом регистре)
-        message_text = update.message.text.lower()
-        if any(word in message_text for word in ['пароль', 'password']):
-            strong_password = generate_strong_password(13)
-            await update.message.reply_text(
-                f"🔐 *Вот ваш сгенерированный пароль:*\n"
-                f"`{strong_password}`\n\n"
-                f"⚠️ *Сохраните его в надежном месте!*",
-                parse_mode='Markdown'
-            )
+        # Генерируем сложный пароль
+        strong_password = generate_strong_password(13)
+        
+        await update.message.reply_text(
+            f"🔐 *Сгенерированный пароль:*\n"
+            f"`{strong_password}`\n\n"
+            f"*Длина:* 13 символов\n"
+            f"*Символы:* неповторяющиеся\n"
+            f"⚠️ *Сохраните в надежном месте!*",
+            parse_mode='Markdown'
+        )
             
     except Exception as e:
-        print(f"Error in generate_password_command: {e}")
+        print(f"Error in password_command: {e}")
+        await update.message.reply_text("❌ Ошибка при генерации пароля")
 
 def main():
     try:
@@ -263,10 +262,9 @@ def main():
         application.add_handler(CommandHandler("ban", ban_command))
         application.add_handler(CommandHandler("unban", unban_command))
         application.add_handler(CommandHandler("t", send_message_command))
+        application.add_handler(CommandHandler("password", password_command))
         application.add_handler(conv_handler)
         application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
-        # Обработчик для генерации пароля (должен быть после основного обработчика сообщений)
-        application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, generate_password_command))
         
         print("🔄 Запуск бота...")
         print("✅ Бот запущен! Остановите все другие экземпляры бота.")
