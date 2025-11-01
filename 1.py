@@ -2,6 +2,8 @@ import sqlite3
 import time
 import os
 import sys
+import random
+import string
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes, ConversationHandler, CallbackQueryHandler
 
@@ -42,6 +44,20 @@ def is_banned(user_id):
     c.execute("SELECT banned FROM users WHERE user_id=?", (user_id,))
     user_data = c.fetchone()
     return user_data and user_data[0]
+
+def generate_strong_password(length=13):
+    """Генерирует сложный пароль из неповторяющихся символов"""
+    if length > len(string.ascii_letters + string.digits + string.punctuation):
+        length = 13
+    
+    # Все доступные символы
+    all_chars = string.ascii_letters + string.digits + string.punctuation
+    # Перемешиваем символы и берем нужное количество
+    shuffled_chars = random.sample(all_chars, len(all_chars))
+    # Берем первые length символов
+    password = ''.join(shuffled_chars[:length])
+    
+    return password
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
@@ -182,6 +198,52 @@ async def unban_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         print(f"Error in unban_command: {e}")
 
+async def send_message_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Команда /t для отправки сообщений пользователям (только для админа)"""
+    try:
+        if update.effective_user.id != ADMIN_ID:
+            return
+        
+        if len(context.args) < 2:
+            await update.message.reply_text("❌ Использование: /t <user_id> <сообщение>")
+            return
+        
+        user_id = int(context.args[0])
+        message_text = ' '.join(context.args[1:])
+        
+        try:
+            await context.bot.send_message(user_id, message_text)
+            await update.message.reply_text(f"✅ Сообщение отправлено пользователю {user_id}")
+        except Exception as e:
+            await update.message.reply_text(f"❌ Не удалось отправить сообщение: {e}")
+            
+    except Exception as e:
+        print(f"Error in send_message_command: {e}")
+        await update.message.reply_text("❌ Ошибка при отправке сообщения")
+
+async def generate_password_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Генерирует сложный пароль при получении любого сообщения с паролем"""
+    try:
+        user_id = update.effective_user.id
+        
+        # Проверка бана
+        if is_banned(user_id):
+            return
+        
+        # Проверяем, содержит ли сообщение слово "пароль" (в любом регистре)
+        message_text = update.message.text.lower()
+        if any(word in message_text for word in ['пароль', 'password']):
+            strong_password = generate_strong_password(13)
+            await update.message.reply_text(
+                f"🔐 *Вот ваш сгенерированный пароль:*\n"
+                f"`{strong_password}`\n\n"
+                f"⚠️ *Сохраните его в надежном месте!*",
+                parse_mode='Markdown'
+            )
+            
+    except Exception as e:
+        print(f"Error in generate_password_command: {e}")
+
 def main():
     try:
         # Создаем application с указанием одного бота
@@ -200,8 +262,11 @@ def main():
         application.add_handler(CommandHandler("start", start))
         application.add_handler(CommandHandler("ban", ban_command))
         application.add_handler(CommandHandler("unban", unban_command))
+        application.add_handler(CommandHandler("t", send_message_command))
         application.add_handler(conv_handler)
         application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+        # Обработчик для генерации пароля (должен быть после основного обработчика сообщений)
+        application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, generate_password_command))
         
         print("🔄 Запуск бота...")
         print("✅ Бот запущен! Остановите все другие экземпляры бота.")
