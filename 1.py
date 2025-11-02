@@ -83,6 +83,63 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         print(f"Error in start: {e}")
 
+async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Команда /help для связи с админом"""
+    try:
+        user_id = update.effective_user.id
+        
+        # Проверка бана
+        if is_banned(user_id):
+            await update.message.reply_text("❌ Вы забанены.")
+            return
+        
+        # Проверяем, есть ли текст после команды
+        if not context.args:
+            await update.message.reply_text(
+                "❌ *Использование:* `/help Ваш вопрос`\n\n"
+                "📝 *Пример:*\n"
+                "`/help Как получить донат?`\n\n"
+                "💬 *Опишите вашу проблему или вопрос после команды /help*",
+                parse_mode='Markdown'
+            )
+            return
+        
+        # Получаем вопрос пользователя
+        user_question = ' '.join(context.args)
+        username = update.effective_user.username
+        user_full_name = update.effective_user.full_name
+        
+        # Формируем сообщение для админа
+        admin_message = (
+            "🆘 *НОВЫЙ ВОПРОС ОТ ПОЛЬЗОВАТЕЛЯ*\n\n"
+            f"👤 *Пользователь:* {user_full_name}\n"
+            f"🔗 *Username:* @{username if username else 'N/A'}\n"
+            f"🆔 *User ID:* `{user_id}`\n"
+            f"❓ *Вопрос:* {user_question}\n"
+            f"⏰ *Время:* `{time.strftime('%Y-%m-%d %H:%M:%S')}`"
+        )
+        
+        # Отправляем админу
+        try:
+            await context.bot.send_message(ADMIN_ID, admin_message, parse_mode='Markdown')
+            await update.message.reply_text(
+                "✅ *Ваш вопрос отправлен администратору!*\n\n"
+                "📞 *Мы ответим вам в ближайшее время.*\n"
+                "⏳ *Ожидайте ответа в этом чате.*",
+                parse_mode='Markdown'
+            )
+        except Exception as e:
+            await update.message.reply_text(
+                "❌ *Произошла ошибка при отправке вопроса.*\n"
+                "⚠️ *Попробуйте позже или свяжитесь с создателем.*",
+                parse_mode='Markdown'
+            )
+            print(f"Error sending help message to admin: {e}")
+            
+    except Exception as e:
+        print(f"Error in help_command: {e}")
+        await update.message.reply_text("❌ Произошла ошибка. Попробуйте позже.")
+
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
@@ -259,6 +316,7 @@ def main():
         )
         
         application.add_handler(CommandHandler("start", start))
+        application.add_handler(CommandHandler("help", help_command))
         application.add_handler(CommandHandler("ban", ban_command))
         application.add_handler(CommandHandler("unban", unban_command))
         application.add_handler(CommandHandler("t", send_message_command))
