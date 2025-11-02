@@ -107,16 +107,14 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # Получаем вопрос пользователя
         user_question = ' '.join(context.args)
         username = update.effective_user.username
-        user_full_name = update.effective_user.full_name
+        user_id = update.effective_user.id
         
-        # Формируем сообщение для админа
+        # Формируем сообщение для админа в указанном формате
         admin_message = (
             "🆘 *НОВЫЙ ВОПРОС ОТ ПОЛЬЗОВАТЕЛЯ*\n\n"
-            f"👤 *Пользователь:* {user_full_name}\n"
-            f"🔗 *Username:* @{username if username else 'N/A'}\n"
-            f"🆔 *User ID:* `{user_id}`\n"
-            f"❓ *Вопрос:* {user_question}\n"
-            f"⏰ *Время:* `{time.strftime('%Y-%m-%d %H:%M:%S')}`"
+            f"Username: @{username or 'N/A'}\n"
+            f"🆔 User ID: {user_id}\n"
+            f"❓ Вопрос: {user_question}"
         )
         
         # Отправляем админу
@@ -337,4 +335,3 @@ if __name__ == '__main__':
     # Проверяем, не запущен ли уже бот
     print("🔍 Проверка запущенных процессов...")
     main()
-
