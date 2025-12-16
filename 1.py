@@ -5,7 +5,7 @@ import json
 import os
 
 # ============ НАСТРОЙКИ ============
-BOT_TOKEN = "8500113818:AAECdcA15J1PBP8uYg4-bOF66RXIrZL161Y"
+BOT_TOKEN = "8534057742:AAE1EDuHUmBXo0vxsXR5XorlWgeXe3-4L98"
 ARCHIVE_GROUP_ID = -1003606590827  # ID группы с темами (начинается с -100)
 TOPICS_FILE = "user_topics.json"   # Хранение связки user_id -> topic_id
 # ===================================
@@ -205,3 +205,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
